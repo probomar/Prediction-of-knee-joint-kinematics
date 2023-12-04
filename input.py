@@ -17,8 +17,8 @@ def create_direction(path_parent, direction):
 folder_name = 'Results'
 
 # Set model of ligaments
-# ligament = 'linear'
-ligament = 'non-linear'
+ligament = 'linear'
+# ligament = 'non-linear'
 folder_name += '_' + ligament
 
 step = 5  # 'time' step
@@ -133,15 +133,15 @@ coor_femur_transform = np.array([[m.cos(m.radians(171.783943631)), m.cos(m.radia
                                 [0, 0, 0, 1]])
 
 # import stl models
-femur = pv.read('Models/Segmentation_Model_95_femur.stl')
-cartilage = pv.read('Models/Segmentation_Model_84_lateral_tibial_cartilage.stl') + \
-            pv.read('Models/Segmentation_Model_85_medial_tibial_cartilage.stl')
+femur = pv.read('Models-reduce/Segmentation_Model_95_femur.stl')
+cartilage = pv.read('Models-reduce/Segmentation_Model_84_lateral_tibial_cartilage.stl') + \
+            pv.read('Models-reduce/Segmentation_Model_85_medial_tibial_cartilage.stl')
 tibia = pv.read('Models/Segmentation_Model_96_tibia.stl')
-femoral_cartilage = pv.read('Models/Segmentation_Model_83_femoral_cartilage.stl')
-tibial_cartilage = pv.read('Models/Segmentation_Model_84_lateral_tibial_cartilage.stl') + \
-                    pv.read('Models/Segmentation_Model_85_medial_tibial_cartilage.stl')
-meniscus = pv.read('Models/Segmentation_Model_81_lateral_meniscus.stl') + \
-            pv.read('Models/Segmentation_Model_82_medial_meniscus.stl')
+femoral_cartilage = pv.read('Models-reduce/Segmentation_Model_83_femoral_cartilage.stl')
+tibial_cartilage = pv.read('Models-reduce/Segmentation_Model_84_lateral_tibial_cartilage.stl') + \
+                    pv.read('Models-reduce/Segmentation_Model_85_medial_tibial_cartilage.stl')
+meniscus = pv.read('Models-reduce/Segmentation_Model_81_lateral_meniscus.stl') + \
+            pv.read('Models-reduce/Segmentation_Model_82_medial_meniscus.stl')
 
 flex = femur
 flex_cartilage = femoral_cartilage
@@ -150,17 +150,17 @@ full_tibia = tibia + tibial_cartilage + meniscus
 
 #  ligament
 #  attachment
-ACLaf0 = np.array(femur.points[55])
-ACLpf0 = np.array(femur.points[1900])
+ACLaf0 = np.array(femur.points[28])
+ACLpf0 = np.array(femur.points[1142])
 
-PCLaf0 = np.array(femur.points[1556])
-PCLpf0 = np.array(femur.points[274])
+PCLaf0 = np.array(femur.points[907])
+PCLpf0 = np.array(femur.points[169])
 
-LCLf0 = np.array(femur.points[849])
+LCLf0 = np.array(femur.points[552])
 
-MCLaf0 = np.array(femur.points[799])
-MCLof0 = np.array(femur.points[278])
-MCLdf0 = np.array(femur.points[1804])
+MCLaf0 = np.array(femur.points[507])
+MCLof0 = np.array(femur.points[173])
+MCLdf0 = np.array(femur.points[1080])
 
 #  input flexion kinematics and external forces
 dfmot = pd.read_csv('input_motion.csv', sep=';')

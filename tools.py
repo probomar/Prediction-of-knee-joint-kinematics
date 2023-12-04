@@ -71,7 +71,7 @@ def rolling(i, fii):
     return F, soa, N, soaN, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, F_mus, soa_mus
 
 
-# find contact point, if don't exist use last
+# find contact point if it doesn't exist use last
 def contact_point(last_center=np.array([0, 0, 0])):
     collision, ncol = (tibia + tibial_cartilage).collision((flex + flex_cartilage), generate_scalars=True)
     if ncol != 0:
@@ -277,6 +277,25 @@ def plot_flex_view(p2, F, soa, N, soaN, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo,
     plot_lig(p2, MCLd)
 
 
+def plot_flex_view2(p2, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, axis=None):
+    p2.add_mesh(flex, style='wireframe', color='linen')
+    p2.add_mesh(tibia, style='wireframe', color='linen')
+    p2.add_mesh(femoral_cartilage, style='wireframe', color='gold')
+    p2.add_mesh(tibial_cartilage, style='wireframe', color='gold')
+    p2.add_mesh(meniscus, style='wireframe', color='orange')
+    line = pv.Line(axis[0], axis[1])
+    p2.add_mesh(line, color='darkslateblue', line_width=5, name='axis')
+
+    plot_lig(p2, ACLa)
+    plot_lig(p2, ACLp)
+    plot_lig(p2, PCLa)
+    plot_lig(p2, PCLp)
+    plot_lig(p2, LCL)
+    plot_lig(p2, MCLa)
+    plot_lig(p2, MCLo)
+    plot_lig(p2, MCLd)
+
+
 # plot front and side view of knee with its soft issues and forces
 def flex_plot(fi_act, time, F, soa, N, soaN, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, F_mus, soa_mus, axis=None):
 
@@ -292,15 +311,16 @@ def flex_plot(fi_act, time, F, soa, N, soaN, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, 
     else:
         flex_pic = folder_name + '/flex/flex' + str(time) + '.png'
 
-    text1 = 'time = ' + str(time)
-    text2 = 'fi = ' + str(fi_act) + '°'
+    text1 = str(round(motion[(time+1)*step, 2], 1)) + ' % cyklu chůze'
+    print(text1)
+    text2 = 'fi = ' + str(round(-fi_act, 2)) + '°'
 
     p2 = pv.Plotter(off_screen=True, shape=(1, 2))
     p2.background_color = 'white'
 
     p2.subplot(0, 0)
-    p2.add_text(text2, font_size=35, color='black')
-    p2.add_text(text1, font_size=35, position='lower_left', color='black')
+    p2.add_text(text2, font_size=20, color='black')
+    p2.add_text(text1, font_size=20, position='lower_left', color='black')
     plot_flex_view(p2, F, soa, N, soaN, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, F_mus, soa_mus, axis)
     p2.camera.position = (0, -500, 10)
     p2.camera.focal_point = (0, 100, 10)
@@ -310,7 +330,42 @@ def flex_plot(fi_act, time, F, soa, N, soaN, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, 
     p2.camera.position = (-500, 0, 10)
     p2.camera.focal_point = (100, 0, 10)
 
-    p2.show(screenshot=flex_pic, window_size=(2400, 2400), title=(text1+text2))
+    p2.show(screenshot=flex_pic, window_size=(1200, 1200), title=(text1+text2))
+
+
+def flex_plot2(fi_act, time, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, axis=None):
+    if axis is None:
+        axis = [np.array([0, 0, 0]), np.array([0, 0, 0])]
+
+    if time < 10:
+        flex_pic = folder_name + '/flex/flex000' + str(time) + '.png'
+    elif time < 100:
+        flex_pic = folder_name + '/flex/flex00' + str(time) + '.png'
+    elif time < 1000:
+        flex_pic = folder_name + '/flex/flex0' + str(time) + '.png'
+    else:
+        flex_pic = folder_name + '/flex/flex' + str(time) + '.png'
+
+    text1 = str(round(motion[(time+1)*step, 2], 1)) + ' % cyklu chůze'
+    print(text1)
+    text2 = 'fi = ' + str(round(-fi_act, 2)) + '°'
+
+    p2 = pv.Plotter(off_screen=True, shape=(1, 2))
+    p2.background_color = 'white'
+
+    p2.subplot(0, 0)
+    p2.add_text(text2, font_size=20, color='black')
+    p2.add_text(text1, font_size=20, position='lower_left', color='black')
+    plot_flex_view2(p2, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, axis)
+    p2.camera.position = (0, -500, 10)
+    p2.camera.focal_point = (0, 100, 10)
+
+    p2.subplot(0, 1)
+    plot_flex_view2(p2, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, axis)
+    p2.camera.position = (-500, 0, 10)
+    p2.camera.focal_point = (100, 0, 10)
+
+    p2.show(screenshot=flex_pic, window_size=(1200, 1200), title=(text1+text2))
 
 
 # plot femur with color map
@@ -328,8 +383,8 @@ def color_plot(fi_act, time, data, name):
         file2 = folder_name + '/' + name + '/data/' + name + str(time) + '.csv'
         picture = folder_name + '/' + name + '/figure/' + name + str(time) + '.png'
 
-    text1 = 'time = ' + str(time)
-    text2 = 'fi = ' + str(fi_act) + '°'
+    text1 = str(round(motion[(time + 1) * step, 2], 1)) + ' % cyklu chůze'
+    text2 = 'fi = ' + str(round(-fi_act, 2)) + '°'
 
     if os.path.exists(file2):
         os.remove(file2)
@@ -343,14 +398,14 @@ def color_plot(fi_act, time, data, name):
     p1 = pv.Plotter(off_screen=True)
     p1.background_color = 'white'
 
-    p1.add_text(text1, position='lower_left', color='black')
-    p1.add_text(text2, color='black')
+    p1.add_text(text1, font_size=10, position='lower_left', color='black')
+    p1.add_text(text2, font_size=10, color='black')
     sarg = dict(color='black')
     p1.add_mesh(mesh1, scalars='Normal stress [MPa]', clim=[0.0000000001, 10], below_color='grey', above_color='red',
                 reset_camera=True, scalar_bar_args=sarg)  # , style='wireframe', color='linen')
     p1.view_yx()
     p1.set_viewup([0, -1, 0])
-    p1.show(screenshot=picture)
+    p1.show(screenshot=picture, window_size=(960, 720))
 
 
 def angle(vector_1, vector_2):
@@ -472,8 +527,8 @@ def motions(coor, transform01):
     return R1, R2, R3, T1, T2, T3
 
 
-def stress_time(name, foldername):
-    df = pd.read_csv(foldername + '/cor_lig_v3.csv', sep=',', header=None)
+def stress_time(name, fold_name):
+    df = pd.read_csv(fold_name + '/cor.csv', sep=',', header=None)
     cor_lig_lin = df.to_numpy()
     num = cor_lig_lin.shape[0]
 
@@ -484,6 +539,8 @@ def stress_time(name, foldername):
 
     N_lenght_m = np.empty([0])
     N_lenght_l = np.empty([0])
+    stress_m = np.empty([0])
+    stress_l = np.empty([0])
 
     for i in range(num+1):
         print(i)
@@ -496,26 +553,34 @@ def stress_time(name, foldername):
         else:
             file_name = str(i) + '.csv'
 
-        dfstress_meniscus = pd.read_csv(foldername + name + file_name, header=None)
+        dfstress_meniscus = pd.read_csv(fold_name + name + file_name, header=None)
         stress = dfstress_meniscus.to_numpy()
 
         N_m = np.array([0, 0, 0])
         N_l = np.array([0, 0, 0])
         soaN_m = np.array([0, 0, 0])
         soaN_l = np.array([0, 0, 0])
+        s_m = np.array([0])
+        s_l = np.array([0])
 
         for j in range(stress.shape[0]):
             if points_femur[j, 0] > 0:
                 Nj_m = np.array(stress[j] * area_femur[j] * normal_vector_femur[j])
                 N_m, _, soaN_m = f.result_of_forces_and_moments(N_m, soaN_m, Nj_m, points_femur[j])
+                if s_m < stress[j]:
+                    s_m = stress[j]
             else:
                 Nj_l = np.array(stress[j] * area_femur[j] * normal_vector_femur[j])
                 N_l, _, soaN_l = f.result_of_forces_and_moments(N_l, soaN_l, Nj_l, points_femur[j])
+                if s_l < stress[j]:
+                    s_l = stress[j]
 
         N_lenght_m = np.append(N_lenght_m, np.linalg.norm(N_m))
         N_lenght_l = np.append(N_lenght_l, np.linalg.norm(N_l))
+        stress_m = np.append(stress_m, np.linalg.norm(s_m))
+        stress_l = np.append(stress_l, np.linalg.norm(s_l))
 
-    return N_lenght_m, N_lenght_l
+    return N_lenght_m, N_lenght_l, stress_m, stress_l
 
 
 def residual_time(force):

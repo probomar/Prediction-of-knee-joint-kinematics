@@ -1,6 +1,6 @@
 import cv2
-from input import *
-
+# from input import *
+import os
 
 def generate_video(path, video_name, img_folder):
     os.chdir(path)
@@ -9,7 +9,7 @@ def generate_video(path, video_name, img_folder):
               if img.endswith('.jpg') or img.endswith('.jpeg') or img.endswith('.png')]
     frame = cv2.imread(os.path.join(img_folder, images[0]))
     height, width, layers = frame.shape
-    video = cv2.VideoWriter(video_name, 0, 5, (width, height))
+    video = cv2.VideoWriter(video_name, 0, 3, (width, height))
 
     for image in images:
         video.write(cv2.imread(os.path.join(img_folder, image)))
@@ -18,8 +18,10 @@ def generate_video(path, video_name, img_folder):
     video.release()
 
 
-path = folder_name + '/flex'
+# path = folder_name + '/flex'
+path = 'C:/Users/pc/PycharmProjects/Prediction-of-knee-joint-kinematics/video'
 video_name = '_flex.avi'
+# video_name = '_stress.avi'
 image_folder = '.'
 
 os.chdir(path)

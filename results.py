@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 
 
-folder_name_lin = 'Results_linear'
-folder_name_nonlin = 'Results_non-linear'
+folder_name_lin = 'Results4_linear'
+folder_name_nonlin = 'Results4_non-linear'
 
 ligaments = ['ACLa', 'ACLp', 'PCLa', 'PCLp', 'LCL', 'MCLa', 'MCLo', 'MCLd']
 dflig_lin = pd.read_csv(folder_name_lin + '/ligaments/' + ligaments[0] + '.csv', sep=',', header=None)

@@ -21,9 +21,9 @@ def normal_force():
     distance_meniscus0 = np.empty([0, 1])
 
     for n in range(points_femur.shape[0]):
-        pA = points_femur[n] - 10000000 * normal_vector_femur[n]
-        pB = points_femur[n] + 10000000 * normal_vector_femur[n]
         point_femur = points_femur[n]
+        pA = point_femur - 10000000 * normal_vector_femur[n]
+        pB = point_femur + 10000000 * normal_vector_femur[n]
         points_tibia = tibia.ray_trace(pA, pB)[0]
 
         # measurement of the thickness of the femoral cartilage
@@ -68,6 +68,7 @@ def normal_force():
                 tibial_cartilage_distance = 0
                 stress_bone = np.append(stress_bone, [[0]], axis=0)
                 N_bone = np.append(N_bone, [[0, 0, 0]], axis=0)
+
 
             else:
                 d = []
@@ -122,9 +123,8 @@ def normal_force():
                      / meniscus_distance]], axis=0)
                 N_meniscus = np.append(N_meniscus, [
                     (E_meniscus * (1 - ny_meniscus) / (1 + ny_meniscus) / (1 - 2 * ny_meniscus))
-                    * (min_distance - meniscus_distance)
-                    / meniscus_distance * area_femur[n]
-                    * normal_vector_femur[n]], axis=0)
+                    * (min_distance - meniscus_distance) / meniscus_distance * area_femur[n] *
+                    normal_vector_femur[n]], axis=0)
             else:
                 stress_meniscus = np.append(stress_meniscus, [[0]], axis=0)
                 N_meniscus = np.append(N_meniscus, [[0, 0, 0]], axis=0)
@@ -179,6 +179,7 @@ def normal_force():
     # resultant force
     N, MN, soaN = result_of_forces_and_moments(N_cartilage, soaN_cartilage, N_meniscus, soaN_meniscus, N_bone,
                                                soaN_bone)
+
     stress = stress_cartilage + stress_meniscus + stress_bone
     return N, soaN, stress, stress_cartilage, distance_cartilage0, cartilage_femoral, cartilage_tibial, stress_bone, \
         stress_meniscus, distance_meniscus0
@@ -239,25 +240,25 @@ def result_of_forces_and_moments(force1, site_of_action1,
 def ligament_force(lig0, lig1, lig2, k1lig, k2lig, name1, name2):
     lig = lig2 - lig1
     lig_length = np.linalg.norm(lig)
-    lig_length0 = np.linalg.norm(lig0)
+    lig_length0 = lig0
     dlig_length = lig_length - lig_length0
     nlig = lig / lig_length
 
     if ligament == 'linear':
         if lig0 < lig_length:
-            F_lig = - k2lig * dlig_length * nlig
+            F_lig = - k1lig * dlig_length * nlig
         else:
             F_lig = np.array([0, 0, 0])
 
     else:
         eps = dlig_length / lig0
         if (eps >= 0) and (eps <= 2 * epsL):
-            F_lig = - k1lig * (dlig_length ** 2) * nlig
+            F_lig = - k2lig * (dlig_length ** 2) * nlig
         elif eps > 2 * epsL:
-            F_lig = - k2lig * (lig_length - (1 + epsL) * lig_length0) * nlig
+            F_lig = - k1lig * (lig_length - (1 + epsL) * lig_length0) * nlig
         else:
             F_lig = np.array([0, 0, 0])
-    ligament_value = [F_lig, lig1, lig2, name1, name2]
+    ligament_value = [F_lig, lig1, lig2, name1, name2, lig0, lig_length]
     return ligament_value
 
 
@@ -377,42 +378,52 @@ def force_equilibrium(i, fii):
 
     for j in range(len(ligaments)):
         F_lig = ligaments[j][0]
-        print_lig = pd.DataFrame(np.append(np.linalg.norm(F_lig), [F_lig]).reshape(1, 4))
+        lig0 = ligaments[j][5]
+        lig_length = ligaments[j][6]
+        lig1 = ligaments[j][1]
+        lig2 = ligaments[j][2]
+        np_print_lig = np.array([np.linalg.norm(F_lig), F_lig[0], F_lig[1], F_lig[2], lig0, lig_length, lig1[0],
+                                 lig1[1], lig1[2], lig2[0], lig2[1], lig2[2]]).reshape(1, 12)
+
+        # print_lig = pd.DataFrame(np.append(np.linalg.norm(F_lig), [F_lig[0], F_lig[1], F_lig[2], lig0, lig_length,
+        #                                                            lig1[0], lig1[1], lig1[2], lig2[0], lig2[1], lig2[2]]
+        #                                    ).reshape(1, 12))
+        print_lig = pd.DataFrame(np_print_lig)
         print_lig.to_csv(ligaments_files[j], index=False, mode='a', header=False)
 
     coor0 = coor_femur.points[0]
     x = coor_femur.points[1]
     y = coor_femur.points[2]
     z = coor_femur.points[4]
-    print_coor  = pd.DataFrame(np.append(coor0, [x, y, z]).reshape(1, 12))
+    print_coor = pd.DataFrame(np.append(coor0, [x, y, z]).reshape(1, 12))
     print_coor.to_csv(coor_f, index=False, mode='a', header=False)
 
     return F, soa, N, soaN, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, F_mus, soa_mus
 
 
 def resultant_force(i, center=np.array([0, 0, 0])):
-    ACLaf = np.array(flex.points[55])
+    ACLaf = np.array(flex.points[28])
     ACLat = np.array(tibia.points[538])
 
-    ACLpf = np.array(flex.points[1900])
+    ACLpf = np.array(flex.points[1142])
     ACLpt = np.array(tibia.points[1001])
 
-    PCLaf = np.array(flex.points[1556])
+    PCLaf = np.array(flex.points[907])
     PCLat = np.array(tibia.points[1000])
 
-    PCLpf = np.array(flex.points[274])
+    PCLpf = np.array(flex.points[169])
     PCLpt = np.array(tibia.points[189])
 
-    LCLf = np.array(flex.points[849])
+    LCLf = np.array(flex.points[552])
     LCLt = np.array([55, 20, -40])
 
-    MCLaf = np.array(flex.points[799])
+    MCLaf = np.array(flex.points[507])
     MCLat = np.array(tibia.points[1272])
 
-    MCLof = np.array(flex.points[278])
+    MCLof = np.array(flex.points[173])
     MCLot = np.array(tibia.points[1206])
 
-    MCLdf = np.array(flex.points[1804])
+    MCLdf = np.array(flex.points[1080])
     MCLdt = np.array(tibia.points[718])
 
     ACLa0 = np.linalg.norm(ACLat - ACLaf0) / 1.00
