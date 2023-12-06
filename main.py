@@ -2,7 +2,8 @@ from input import *
 import tools as t
 import forces as f
 
-if os.path.exists(folder_name):
+if os.path.exists(folder_name+'/cor0.csv'):
+    print('\nFolder with name \'', folder_name, '\' already exists.')
     print('Are you sure you want to overwrite saved data? Y/n')
     Yn = input()
 else:

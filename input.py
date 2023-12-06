@@ -14,19 +14,19 @@ def create_direction(path_parent, direction):
 
 
 # Set folder for results
-folder_name = 'Results'
+folder_name1 = 'Results'
 
 # Set model of ligaments
-ligament = 'linear'
-# ligament = 'non-linear'
-folder_name += '_' + ligament
+# ligament = 'linear'
+ligament = 'non-linear'
+folder_name = folder_name1 + '_' + ligament
 
 step = 5  # 'time' step
 z_step = 0.02
 fiy_step = 0.05
 
 
-# Optimalization parametrs
+# Optimalization parameters
 Fr = 10  # N Residual force
 Mr = 5000  # Nmm Residual torque
 
@@ -89,7 +89,7 @@ create_direction(folder_name + '/distance_meniscus0', 'figure')
 create_direction(folder_name, 'ligaments')
 create_direction(folder_name, 'results')
 
-cor0 = folder_name + '/cor0.txt'
+cor0 = folder_name + '/cor0.csv'
 if os.path.exists(cor0):
     os.remove(cor0)
 

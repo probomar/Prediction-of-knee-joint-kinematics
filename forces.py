@@ -269,6 +269,14 @@ def external_force(i):
     return force, moment, soa
 
 
+def best_optimization(F_best, M_best, position_best, F, M):
+    if F < F_best and M < M_best:
+        F_best = F
+        M_best = M
+        position_best = coor_femur
+    return F_best, M_best, position_best
+
+
 def force_equilibrium(i, fii):
     n = 0
     step_F = step_F0
@@ -277,88 +285,167 @@ def force_equilibrium(i, fii):
     F, M, soa, center, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = resultant_force(i)
 
     F_length = np.linalg.norm(F)
-    M_length = np.linalg.norm(M)
-    print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-          (' ', ' ', step_F, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+    F_best = F_length
+    F1 = F_length
 
-    F_M = pd.DataFrame(np.append(i, [fii, n, F_length, M_length]).reshape(1, 5))
-    F_M.to_csv(F_M_file, index=False, mode='a', header=False)
+    M_length = np.linalg.norm(M)
+    M_best = M_length
+    M1 = M_length
+    position_best = coor_femur
+
+    # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+    #       (' ', ' ', step_F, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+
+    # F_M = pd.DataFrame(np.append(i, [fii, n, F_length, M_length]).reshape(1, 5))
+    # F_M.to_csv(F_M_file, index=False, mode='a', header=False)
+
+    t.print_forces(' ', ' ', step_F, F_length, M_length)
+    t.save_forces(i, fii, n, F_length, M_length)
 
     while True:
+
         if (F_length < Fr) and (M_length < Mr):
             break
 
         n += 1
 
         if M_length > Mr/5:
+            M_length_old = M_length
+
             rotate_angle = M_length * step_M * 180 / m.pi
             flex.rotate_vector(vector=M, angle=rotate_angle, point=center, inplace=True)
             flex_cartilage.rotate_vector(vector=M, angle=rotate_angle, point=center, inplace=True)
             coor_femur.rotate_vector(vector=M, angle=rotate_angle, point=center, inplace=True)
-            M_length_old = M_length
+
             F, M, _, center, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = resultant_force(i, center)
             F_length = np.linalg.norm(F)
             M_length = np.linalg.norm(M)
+            F2 = F_length
+            M2 = M_length
 
-            F_M = pd.DataFrame(np.append(i, [fii, n, F_length, M_length]).reshape(1, 5))
-            F_M.to_csv(F_M_file, index=False, mode='a', header=False)
+            if (F2 > 2*F1) or (M2 > 2*M1):
+                print('rotate (F2 > 2*F1) or (M2 > 2*M1)')
+                flex.rotate_vector(vector=M, angle=-rotate_angle/2, point=center, inplace=True)
+                flex_cartilage.rotate_vector(vector=M, angle=-rotate_angle/2, point=center, inplace=True)
+                coor_femur.rotate_vector(vector=M, angle=-rotate_angle/2, point=center, inplace=True)
+                F, M, _, center, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = resultant_force(i, center)
+                F_length = np.linalg.norm(F)
+                M_length = np.linalg.norm(M)
+                F1 = F_length
+                M1 = M_length
 
-            if ((F_length < Fr) and (M_length < Mr)):
-                print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                      (n, ' ', ' ', 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+            # F_M = pd.DataFrame(np.append(i, [fii, n, F_length, M_length]).reshape(1, 5))
+            # F_M.to_csv(F_M_file, index=False, mode='a', header=False)
+            t.save_forces(i, fii, n, F_length, M_length)
+
+            if (F_length < Fr) and (M_length < Mr):
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       (n, ' ', ' ', 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+                t.print_forces(n, ' ', ' ', F_length, M_length)
                 break
+            else:
+                F_best, M_best, position_best = best_optimization(F_best, M_best, position_best, F_length, M_length)
 
             if M_length_old > M_length:
                 step_M *= alpha
                 step_M = round(step_M, 15)
-                print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                      ('M', 'alpha', step_M, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       ('M', 'alpha', step_M, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+                t.print_forces('M'+str(n), 'alpha', step_M, F_length, M_length)
 
             elif M_length_old < M_length:
                 step_M *= beta * 1.5
                 step_M = round(step_M, 15)
-                print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                      ('M', 'beta', step_M, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       ('M', 'beta', step_M, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+                t.print_forces('M'+str(n), 'beta', step_M, F_length, M_length)
 
             else:
-                print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                      ('M', ' ', step_M, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
-
-        F_transform = np.array([[1, 0, 0, F[0] * step_F], [0, 1, 0, F[1] * step_F],
-                                [0, 0, 1, F[2] * step_F], [0, 0, 0, 1]])
-        flex.transform(F_transform, inplace=True)
-        flex_cartilage.transform(F_transform, inplace=True)
-        coor_femur.transform(F_transform, inplace=True)
-
-        F_new, M_new, _, center, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = resultant_force(i, center)
-
-        F_length_new = np.linalg.norm(F_new)
-        M_length_new = np.linalg.norm(M_new)
-
-        F_M = pd.DataFrame(np.append(i, [fii, n, F_length_new, M_length_new]).reshape(1, 5))
-        F_M.to_csv(F_M_file, index=False, mode='a', header=False)
-
-        if ((F_length_new < Fr) and (M_length_new < Mr)) or (step_F < step_F_min) or n == n_max:
-            print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                  (n, ' ', ' ', 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
-            break
-
-        if 1 * F_length > F_length_new:
-            step_F *= alpha
-            step_F = round(step_F, 10)
-            print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                  (n, 'alpha', step_F, 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
-        elif 1 * F_length < F_length_new:
-            step_F *= beta
-            step_F = round(step_F, 10)
-
-            print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                  (n, 'beta', step_F, 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       ('M', ' ', step_M, 'F =', F_length, 'N', 'M =', M_length/1000, 'Nm'))
+                t.print_forces('M'+str(n), ' ', step_M, F_length, M_length)
         else:
-            print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
-                  (n, ' ', step_F, 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
+            print('skip M')
+
+
+        if F_length > Fr/5:
+            F_transform = np.array([[1, 0, 0, F[0] * step_F], [0, 1, 0, F[1] * step_F],
+                                [0, 0, 1, F[2] * step_F], [0, 0, 0, 1]])
+            flex.transform(F_transform, inplace=True)
+            flex_cartilage.transform(F_transform, inplace=True)
+            coor_femur.transform(F_transform, inplace=True)
+
+            F_new, M_new, _, center, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = resultant_force(i, center)
+
+            F_length_new = np.linalg.norm(F_new)
+            M_length_new = np.linalg.norm(M_new)
+            F2 = F_length_new
+            M2 = F_length_new
+
+            if (F2 > 2*F1) or (M2 > 2*M1):
+                print('transform (F2 > 2*F1) or (M2 > 2*M1)')
+                F_transform = np.array([[1, 0, 0, -F[0] * step_F/2], [0, 1, 0, -F[1] * step_F/2],
+                                        [0, 0, 1, -[2] * step_F]/2, [0, 0, 0, 1]])
+                flex.transform(F_transform, inplace=True)
+                flex_cartilage.transform(F_transform, inplace=True)
+                coor_femur.transform(F_transform, inplace=True)
+                F, M, _, center, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = resultant_force(i, center)
+                F_length = np.linalg.norm(F)
+                M_length = np.linalg.norm(M)
+                F1 = F_length
+                M1 = M_length
+
+            # F_M = pd.DataFrame(np.append(i, [fii, n, F_length_new, M_length_new]).reshape(1, 5))
+            # F_M.to_csv(F_M_file, index=False, mode='a', header=False)
+            t.save_forces(i, fii, n, F_length_new, M_length_new)
+
+            if (F_length_new < Fr) and (M_length_new < Mr):
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       (n, ' ', ' ', 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
+                t.print_forces(n, ' ', ' ', F_length_new, M_length_new)
+                break
+            else:
+                F_best, M_best, position_best = best_optimization(F_best, M_best, position_best, F_length, M_length)
+
+            if 1 * F_length > F_length_new:
+                step_F *= alpha
+                step_F = round(step_F, 10)
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       (n, 'alpha', step_F, 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
+                t.print_forces(n, 'alpha', step_F, F_length_new, M_length_new)
+
+            elif 1 * F_length < F_length_new:
+                step_F *= beta
+                step_F = round(step_F, 10)
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       (n, 'beta', step_F, 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
+                t.print_forces(n, 'beta', step_F, F_length_new, M_length_new)
+
+            else:
+                # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+                #       (n, ' ', step_F, 'F =', F_length_new, 'N', 'M =', M_length_new/1000, 'Nm'))
+                t.print_forces(n, '', step_F, F_length_new, M_length_new)
+        else:
+            print('skip_F')
 
         F, F_length, M, M_length = F_new, F_length_new, M_new, M_length_new
+
+        if n == n_max:
+            # print("{:<3} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+            #       (n, ' ', ' ', 'F =', F_length_new, 'N', 'M =', M_length_new / 1000, 'Nm'))
+            t.print_forces(n, ' ', ' ', F_length_new, M_length_new)
+            # transform back
+            coor = coor_femur
+            back_transform = t.transform_matrix(coor, position_best)
+            flex.transform(back_transform, inplace=True)
+            flex_cartilage.transform(back_transform, inplace=True)
+            coor_femur.transform(back_transform, inplace=True)
+            t.print_forces(' ', ' ', ' ', F_best, M_best)
+            F, M, _, center, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = resultant_force(i, center)
+            F_length = np.linalg.norm(F)
+            M_length = np.linalg.norm(M)
+            t.print_forces(' ', ' ', ' ', F_length, M_length)
+            break
 
     F, M, soa, center, N, soaN, stress, stress_cartilage, ACLa, ACLp, PCLa, PCLp, LCL, MCLa, MCLo, MCLd, F_mus, \
         soa_mus, distance_cartilage0, cartilage_femoral, cartilage_tibial, stress_bone, stress_meniscus, \
@@ -384,10 +471,6 @@ def force_equilibrium(i, fii):
         lig2 = ligaments[j][2]
         np_print_lig = np.array([np.linalg.norm(F_lig), F_lig[0], F_lig[1], F_lig[2], lig0, lig_length, lig1[0],
                                  lig1[1], lig1[2], lig2[0], lig2[1], lig2[2]]).reshape(1, 12)
-
-        # print_lig = pd.DataFrame(np.append(np.linalg.norm(F_lig), [F_lig[0], F_lig[1], F_lig[2], lig0, lig_length,
-        #                                                            lig1[0], lig1[1], lig1[2], lig2[0], lig2[1], lig2[2]]
-        #                                    ).reshape(1, 12))
         print_lig = pd.DataFrame(np_print_lig)
         print_lig.to_csv(ligaments_files[j], index=False, mode='a', header=False)
 

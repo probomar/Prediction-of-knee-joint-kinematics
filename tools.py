@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import pandas as pd
+
 import forces as f
 from input import *
 import time as tim
@@ -613,3 +615,12 @@ def plot_kinematics(mx, my, myerr, xlin, ylin, xnonlin, ynonlin, title, ylabel, 
     plt.savefig(name, dpi=300)
     plt.show()
 
+
+def save_forces(i, fii, n, F, M):
+    F_M = pd.DataFrame(np.append(i, [fii, n, F, M]).reshape(1, 5))
+    F_M.to_csv(F_M_file, index=False, mode='a', header=False)
+
+
+def print_forces(n, step, step_size, F, M):
+    print("{:<4} {:<7} {:<15} {:<4} {:<20} {:<5} {:<4} {:<20} {:<5}".format
+          (n, step, step_size, 'F =', F, 'N', 'M =', M / 1000, 'Nm'))
